@@ -1,0 +1,482 @@
+احفظ الملف التالي باسم `index.html` وافتحه في المتصفح. يضم صفحة المستخدم ولوحة الأدمن في نموذج واحد، ويحفظ التعديلات محلياً في المتصفح عبر `localStorage`. ربط تسجيل الدخول، قاعدة البيانات، والبث الفعلي يحتاج إلى خادم أو خدمات خارجية.
+
+```html
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>البث — صفحة المستخدم ولوحة التحكم</title>
+  <style>
+    :root {
+      --bg: #07080c;
+      --panel: #101116;
+      --panel-2: #0b0c11;
+      --border: #30323c;
+      --text: #f3f3f5;
+      --muted: #92939d;
+      --primary: #f0bd51;
+      --secondary: #a87b22;
+      --font: Arial, sans-serif;
+      --body-size: 16px;
+      --heading-size: 25px;
+      --button-size: 17px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: var(--body-size);
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app { max-width: 1050px; margin: auto; padding: 20px; }
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 14px; margin-bottom: 20px;
+    }
+    .brand { font-size: 20px; font-weight: 800; }
+    .tabs { display: flex; gap: 8px; }
+    .tab, .btn, .icon-btn {
+      border: 1px solid var(--border); color: var(--text);
+      background: #14151b; border-radius: 13px; padding: 11px 16px;
+      transition: .18s ease;
+    }
+    .tab:hover, .btn:hover, .icon-btn:hover { border-color: var(--primary); }
+    .tab.active { color: var(--primary); border-color: var(--primary); }
+    .btn.primary {
+      color: #17120a; background: linear-gradient(#ffda83, #d99d29);
+      border-color: #f5c85f; font-weight: 800;
+    }
+    .btn:active, .tab:active { transform: scale(.98); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .card {
+      background: linear-gradient(145deg, #111218, #090a0f);
+      border: 1px solid var(--border); border-radius: 24px;
+      padding: 22px; margin-bottom: 18px;
+      box-shadow: 0 12px 35px #0005;
+    }
+    .section-title {
+      margin: 0 0 15px; font-size: var(--heading-size);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .muted { color: var(--muted); }
+    .stream-screen {
+      min-height: 310px; border: 1px solid #333642; border-radius: 22px;
+      background: radial-gradient(ellipse at center, #111a2b 0%, #08090e 64%);
+      display: grid; place-items: center; text-align: center; overflow: hidden;
+      position: relative;
+    }
+    .stream-screen::before {
+      content: ""; position: absolute; width: 245px; height: 245px;
+      border: 1px solid #d3a23c55; border-radius: 50%;
+      box-shadow: 0 0 0 55px #23345a22, 0 0 0 105px #ffffff08;
+    }
+    .stream-message { position: relative; padding: 25px; max-width: 600px; }
+    .broadcast-icon { font-size: 48px; color: var(--primary); }
+    .stream-message h2 { margin: 10px 0; font-size: 28px; }
+    .stream-message p { color: var(--muted); line-height: 1.7; }
+    .stream-screen iframe { width: 100%; height: 100%; min-height: 310px; border: 0; }
+    .user-actions {
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      gap: 10px; margin-top: 16px;
+    }
+    .user-actions .btn { min-height: 58px; font-size: var(--button-size); }
+    .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .banner {
+      border: 1px solid #554525; border-radius: 16px; padding: 18px;
+      margin-top: 10px; color: var(--primary); background: #17130b;
+    }
+    .movie-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .movie {
+      background: #0a0b10; border: 1px solid var(--border);
+      border-radius: 15px; padding: 13px;
+    }
+    .movie img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; }
+    .movie h3 { margin: 10px 0 5px; }
+    .admin-layout { display: grid; grid-template-columns: 210px 1fr; gap: 16px; }
+    .side-nav { align-self: start; position: sticky; top: 12px; }
+    .side-nav button { display: block; width: 100%; text-align: right; margin-bottom: 8px; }
+    .admin-section { display: none; }
+    .admin-section.active { display: block; }
+    .field { display: grid; gap: 6px; margin-bottom: 13px; }
+    .field label { color: #c8c8ce; font-size: 14px; }
+    input, select, textarea {
+      width: 100%; color: var(--text); background: #090a0f;
+      border: 1px solid var(--border); border-radius: 11px; padding: 11px 12px;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+    textarea { min-height: 85px; resize: vertical; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .item-row {
+      display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px;
+      align-items: center; padding: 10px 0; border-bottom: 1px solid #272832;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .small { padding: 8px 11px; font-size: 14px; }
+    .danger { border-color: #753f43; color: #ff9da3; }
+    .notice { color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .color-field { height: 44px; padding: 4px; }
+    dialog {
+      color: var(--text); background: var(--panel); border: 1px solid var(--border);
+      border-radius: 18px; width: min(420px, calc(100% - 28px));
+    }
+    dialog::backdrop { background: #000b; }
+    .chat-box { min-height: 170px; padding: 12px; border-radius: 12px; background: #090a0f; }
+    .toast {
+      position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+      background: #202129; border: 1px solid var(--border); padding: 11px 18px;
+      border-radius: 12px; display: none; z-index: 5;
+    }
+    @media (max-width: 760px) {
+      .app { padding: 12px; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .user-actions { grid-template-columns: 1fr 1fr; }
+      .user-actions .btn:last-child { grid-column: span 2; }
+      .content-grid, .admin-layout { grid-template-columns: 1fr; }
+      .side-nav { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+      .side-nav button { margin: 0; }
+      .movie-list { grid-template-columns: 1fr 1fr; }
+      .item-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">◉ منصة البث</div>
+      <div class="tabs">
+        <button class="tab active" data-page="userPage">صفحة المستخدم</button>
+        <button class="tab" data-page="adminPage">لوحة الأدمن</button>
+      </div>
+    </header>
+
+    <!-- صفحة المستخدم -->
+    <main id="userPage" class="page active">
+      <section class="card">
+        <div id="streamScreen" class="stream-screen">
+          <div class="stream-message">
+            <div class="broadcast-icon">◉</div>
+            <h2 id="streamTitle">لا يوجد بث نشط حالياً</h2>
+            <p id="streamDescription">تابع الصفحة لمعرفة موعد البث القادم.</p>
+          </div>
+        </div>
+        <div id="userButtons" class="user-actions"></div>
+      </section>
+
+      <section class="content-grid">
+        <div class="card">
+          <h2 class="section-title">البنرات والإعلانات</h2>
+          <div id="userBanners"></div>
+        </div>
+        <div class="card">
+          <h2 class="section-title">مجموعات الأفلام</h2>
+          <div id="userCollections" class="muted">لا توجد مجموعات بعد.</div>
+        </div>
+      </section>
+      <section class="card">
+        <h2 class="section-title">الأفلام</h2>
+        <div id="userMovies" class="movie-list"></div>
+      </section>
+    </main>
+
+    <!-- لوحة الأدمن -->
+    <main id="adminPage" class="page">
+      <div class="admin-layout">
+        <nav class="side-nav">
+          <button class="btn admin-nav active" data-section="buttonsSection">إدارة الأزرار</button>
+          <button class="btn admin-nav" data-section="fallbackSection">شاشة العرض</button>
+          <button class="btn admin-nav" data-section="bannersSection">البنرات</button>
+          <button class="btn admin-nav" data-section="moviesSection">الأفلام والمجموعات</button>
+          <button class="btn admin-nav" data-section="designSection">الهوية البصرية</button>
+        </nav>
+
+        <div>
+          <section id="buttonsSection" class="card admin-section active">
+            <h2 class="section-title">إدارة أزرار المستخدم</h2>
+            <div id="buttonEditor"></div>
+            <div class="actions">
+              <button class="btn" id="addButton">＋ إضافة زر</button>
+              <button class="btn primary" id="saveButtons">حفظ وتطبيق</button>
+            </div>
+            <p class="notice">الإجراءات المتاحة: رابط الموقع، تحديث البث، مراسلة، شات الذكاء الاصطناعي، مشاهدة البث.</p>
+          </section>
+
+          <section id="fallbackSection" class="card admin-section">
+            <h2 class="section-title">شاشة العرض والبث البديل</h2>
+            <div class="field"><label>عنوان الحالة</label><input id="fallbackTitle"></div>
+            <div class="field"><label>الرسالة الظاهرة للمستخدم</label><textarea id="fallbackText"></textarea></div>
+            <div class="field">
+              <label>نوع المحتوى عند عدم وجود بث</label>
+              <select id="fallbackMode">
+                <option value="message">رسالة ترحيبية</option>
+                <option value="video">فيديو مسجل أو بث بديل</option>
+              </select>
+            </div>
+            <div class="field"><label>رابط البث أو الفيديو (اختياري)</label><input id="fallbackUrl" placeholder="https://..."></div>
+            <button class="btn primary" id="saveFallback">حفظ وتطبيق</button>
+          </section>
+
+          <section id="bannersSection" class="card admin-section">
+            <h2 class="section-title">إدارة البنرات والصور</h2>
+            <div class="row">
+              <div class="field"><label>نص البنر</label><input id="bannerText" placeholder="عنوان الإعلان"></div>
+              <div class="field"><label>رابط الصورة (اختياري)</label><input id="bannerImage" placeholder="https://..."></div>
+            </div>
+            <div class="field"><label>وجهة النقر (اختياري)</label><input id="bannerLink" placeholder="https://..."></div>
+            <button class="btn" id="addBanner">＋ إضافة بنر</button>
+            <div id="bannerEditor"></div>
+          </section>
+
+          <section id="moviesSection" class="card admin-section">
+            <h2 class="section-title">الأفلام ومجموعات الأفلام</h2>
+            <div class="row">
+              <div class="field"><label>عنوان الفيلم</label><input id="movieTitle"></div>
+              <div class="field"><label>رابط الصورة</label><input id="movieImage"></div>
+            </div>
+            <div class="field"><label>الوصف</label><textarea id="movieDescription"></textarea></div>
+            <div class="row">
+              <div class="field"><label>رابط الفيلم أو الملف</label><input id="movieUrl"></div>
+              <div class="field"><label>المجموعة</label><input id="movieCollection" placeholder="مثال: أفلام قصيرة"></div>
+            </div>
+            <button class="btn" id="addMovie">＋ إضافة فيلم</button>
+            <div id="movieEditor"></div>
+          </section>
+
+          <section id="designSection" class="card admin-section">
+            <h2 class="section-title">الهوية البصرية والخطوط</h2>
+            <div class="row">
+              <div class="field"><label>لون الخلفية</label><input class="color-field" type="color" id="themeBg"></div>
+              <div class="field"><label>لون البطاقات</label><input class="color-field" type="color" id="themePanel"></div>
+              <div class="field"><label>اللون الأساسي</label><input class="color-field" type="color" id="themePrimary"></div>
+              <div class="field"><label>اللون الثانوي</label><input class="color-field" type="color" id="themeSecondary"></div>
+              <div class="field"><label>لون النص</label><input class="color-field" type="color" id="themeText"></div>
+              <div class="field"><label>نوع الخط</label>
+                <select id="themeFont">
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="Tahoma, sans-serif">Tahoma</option>
+                  <option value="system-ui, sans-serif">System UI</option>
+                  <option value="Georgia, serif">Georgia</option>
+                </select>
+              </div>
+              <div class="field"><label>حجم النص (px)</label><input type="number" id="bodySize" min="12" max="24"></div>
+              <div class="field"><label>حجم العناوين (px)</label><input type="number" id="headingSize" min="18" max="40"></div>
+              <div class="field"><label>حجم الأزرار (px)</label><input type="number" id="buttonSize" min="13" max="24"></div>
+            </div>
+            <button class="btn primary" id="saveDesign">حفظ وتطبيق الهوية</button>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="chatDialog">
+    <h2>شات الذكاء الاصطناعي</h2>
+    <div class="chat-box" id="chatMessages">مرحباً! هذه واجهة تجريبية. اربطها بخدمة ذكاء اصطناعي لتمكين المحادثة.</div>
+    <div class="field" style="margin-top:12px"><input id="chatInput" placeholder="اكتب رسالتك..."></div>
+    <div class="actions">
+      <button class="btn" id="sendChat">إرسال</button>
+      <button class="btn" id="closeChat">إغلاق</button>
+    </div>
+  </dialog>
+  <dialog id="confirmDialog">
+    <p>هل أنت متأكد من حذف هذا العنصر؟</p>
+    <div class="actions">
+      <button class="btn danger" id="confirmDelete">حذف</button>
+      <button class="btn" id="cancelDelete">إلغاء</button>
+    </div>
+  </dialog>
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // تخزين محلي تجريبي. استبدل localStorage بطلبات API عند ربط الخادم.
+    const defaults = {
+      buttons: [
+        { label: "رابط موقعي", action: "site", url: "https://example.com" },
+        { label: "تحديث البث", action: "refresh", url: "" },
+        { label: "راسلني", action: "contact", url: "mailto:hello@example.com" },
+        { label: "شات الذكاء الاصطناعي", action: "chat", url: "" },
+        { label: "عرض البث المباشر", action: "watch", url: "" }
+      ],
+      fallback: { title: "لا يوجد بث نشط حالياً", text: "تابع الصفحة لمعرفة موعد البث القادم.", mode: "message", url: "" },
+      banners: [{ text: "تابع آخر التحديثات والعروض", image: "", link: "" }],
+      movies: [],
+      design: {
+        bg: "#07080c", panel: "#101116", primary: "#f0bd51",
+        secondary: "#a87b22", text: "#f3f3f5", font: "Arial, sans-serif",
+        bodySize: 16, headingSize: 25, buttonSize: 17
+      }
+    };
+
+    const clone = obj => JSON.parse(JSON.stringify(obj));
+    let state;
+    try { state = { ...clone(defaults), ...JSON.parse(localStorage.getItem("streamDashboard") || "{}") }; }
+    catch { state = clone(defaults); }
+    let pendingDelete = null;
+
+    function persist(message = "تم الحفظ والتطبيق") {
+      localStorage.setItem("streamDashboard", JSON.stringify(state));
+      renderAll();
+      toast(message);
+    }
+    function toast(text) {
+      const el = document.getElementById("toast");
+      el.textContent = text; el.style.display = "block";
+      setTimeout(() => el.style.display = "none", 2200);
+    }
+    function esc(s = "") {
+      return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+    }
+    function safeUrl(url) {
+      try {
+        const u = new URL(url);
+        return ["http:", "https:", "mailto:"].includes(u.protocol) ? u.href : "";
+      } catch { return ""; }
+    }
+    function applyDesign() {
+      const d = state.design;
+      const root = document.documentElement.style;
+      root.setProperty("--bg", d.bg); root.setProperty("--panel", d.panel);
+      root.setProperty("--primary", d.primary); root.setProperty("--secondary", d.secondary);
+      root.setProperty("--text", d.text); root.setProperty("--font", d.font);
+      root.setProperty("--body-size", d.bodySize + "px");
+      root.setProperty("--heading-size", d.headingSize + "px");
+      root.setProperty("--button-size", d.buttonSize + "px");
+    }
+
+    // التنقل بين واجهة المستخدم ولوحة الأدمن.
+    document.querySelectorAll(".tab").forEach(btn => btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === btn));
+      document.querySelectorAll(".page").forEach(x => x.classList.toggle("active", x.id === btn.dataset.page));
+    }));
+    document.querySelectorAll(".admin-nav").forEach(btn => btn.addEventListener("click", () => {
+      document.querySelectorAll(".admin-nav").forEach(x => x.classList.toggle("active", x === btn));
+      document.querySelectorAll(".admin-section").forEach(x => x.classList.toggle("active", x.id === btn.dataset.section));
+    }));
+
+    function embedUrl(url) {
+      try {
+        const u = new URL(url);
+        if (u.hostname.includes("youtu.be")) return "https://www.youtube.com/embed/" + u.pathname.slice(1);
+        if (u.hostname.includes("youtube.com")) {
+          const id = u.searchParams.get("v");
+          return id ? "https://www.youtube.com/embed/" + id : url;
+        }
+      } catch {}
+      return "";
+    }
+
+    function renderUser() {
+      const screen = document.getElementById("streamScreen");
+      const f = state.fallback;
+      screen.innerHTML = "";
+      const embed = f.mode === "video" && embedUrl(f.url);
+      if (embed) {
+        const iframe = document.createElement("iframe");
+        iframe.src = embed; iframe.allowFullscreen = true;
+        iframe.title = "البث أو الفيديو البديل";
+        screen.appendChild(iframe);
+      } else {
+        screen.innerHTML = `<div class="stream-message">
+          <div class="broadcast-icon">◉</div>
+          <h2>${esc(f.title)}</h2><p>${esc(f.text)}</p></div>`;
+      }
+
+      const actions = document.getElementById("userButtons");
+      actions.innerHTML = "";
+      const icons = { site:"↗", refresh:"⟳", contact:"✉", chat:"✦", watch:"▶" };
+      state.buttons.forEach((b, i) => {
+        const btn = document.createElement("button");
+        btn.className = "btn" + (b.action === "watch" ? " primary" : "");
+        btn.innerHTML = `${icons[b.action] || "●"} &nbsp;${esc(b.label)}`;
+        btn.addEventListener("click", () => runAction(b, i));
+        actions.appendChild(btn);
+      });
+
+      document.getElementById("userBanners").innerHTML = state.banners.length
+        ? state.banners.map(b => `<div class="banner">${b.image ? `<img src="${esc(safeUrl(b.image))}" alt="" style="max-width:100%;max-height:100px;display:block;margin-bottom:8px">` : ""}${b.link ? `<a href="${esc(safeUrl(b.link))}" target="_blank" rel="noopener" style="color:inherit">${esc(b.text)}</a>` : esc(b.text)}</div>`).join("")
+        : '<p class="muted">لا توجد بنرات حالياً.</p>';
+
+      const groups = [...new Set(state.movies.map(m => m.collection).filter(Boolean))];
+      document.getElementById("userCollections").textContent = groups.length ? groups.join(" · ") : "لا توجد مجموعات بعد.";
+      document.getElementById("userMovies").innerHTML = state.movies.length
+        ? state.movies.map(m => `<article class="movie">${m.image && safeUrl(m.image) ? `<img src="${esc(safeUrl(m.image))}" alt="">` : ""}<h3>${esc(m.title)}</h3><p class="muted">${esc(m.description)}</p>${m.collection ? `<small class="muted">${esc(m.collection)}</small><br>` : ""}${safeUrl(m.url) ? `<a class="btn small" href="${esc(safeUrl(m.url))}" target="_blank" rel="noopener">مشاهدة الفيلم</a>` : ""}</article>`).join("")
+        : '<p class="muted">لا توجد أفلام مضافة بعد.</p>';
+    }
+
+    function runAction(button, index) {
+      if (button.action === "refresh") { renderUser(); toast("تم تحديث بيانات الصفحة"); return; }
+      if (button.action === "chat") { document.getElementById("chatDialog").showModal(); return; }
+      if (button.action === "watch") {
+        if (state.fallback.url && safeUrl(state.fallback.url)) window.open(safeUrl(state.fallback.url), "_blank", "noopener");
+        else document.getElementById("streamScreen").scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+      const url = safeUrl(button.url);
+      if (url) window.open(url, "_blank", "noopener");
+      else toast("أضف وجهة لهذا الزر من لوحة الأدمن");
+    }
+
+    function renderButtonEditor() {
+      document.getElementById("buttonEditor").innerHTML = state.buttons.map((b, i) => `
+        <div class="item-row">
+          <input aria-label="اسم الزر" data-button-label="${i}" value="${esc(b.label)}">
+          <div>
+            <select data-button-action="${i}">
+              ${[["site","رابط الموقع"],["refresh","تحديث البث"],["contact","مراسلة"],["chat","شات الذكاء الاصطناعي"],["watch","مشاهدة البث"]].map(([v,t]) => `<option value="${v}" ${b.action===v?"selected":""}>${t}</option>`).join("")}
+            </select>
+            <input style="margin-top:6px" data-button-url="${i}" value="${esc(b.url)}" placeholder="الرابط أو البريد">
+          </div>
+          <button class="btn danger small" data-remove-button="${i}">حذف</button>
+        </div>`).join("");
+      document.querySelectorAll("[data-remove-button]").forEach(btn => btn.onclick = () =>
+        askDelete(() => { state.buttons.splice(+btn.dataset.removeButton, 1); persist("تم حذف الزر"); }));
+    }
+
+    function renderBannerEditor() {
+      document.getElementById("bannerEditor").innerHTML = state.banners.map((b,i) =>
+        `<div class="item-row"><span>${esc(b.text)}</span><span class="muted">${esc(b.link || "بلا رابط")}</span><button class="btn danger small" data-remove-banner="${i}">حذف</button></div>`
+      ).join("");
+      document.querySelectorAll("[data-remove-banner]").forEach(btn => btn.onclick = () =>
+        askDelete(() => { state.banners.splice(+btn.dataset.removeBanner, 1); persist("تم حذف البنر"); }));
+    }
+    function renderMovieEditor() {
+      document.getElementById("movieEditor").innerHTML = state.movies.map((m,i) =>
+        `<div class="item-row"><span>${esc(m.title)}</span><span class="muted">${esc(m.collection || "بدون مجموعة")}</span><button class="btn danger small" data-remove-movie="${i}">حذف الفيلم</button></div>`
+      ).join("");
+      document.querySelectorAll("[data-remove-movie]").forEach(btn => btn.onclick = () =>
+        askDelete(() => { state.movies.splice(+btn.dataset.removeMovie, 1); persist("تم حذف الفيلم"); }));
+    }
+
+    function fillSettings() {
+      document.getElementById("fallbackTitle").value = state.fallback.title;
+      document.getElementById("fallbackText").value = state.fallback.text;
+      document.getElementById("fallbackMode").value = state.fallback.mode;
+      document.getElementById("fallbackUrl").value = state.fallback.url;
+      const d = state.design;
+      for (const [id, key] of [["themeBg","bg"],["themePanel","panel"],["themePrimary","primary"],["themeSecondary","secondary"],["themeText","text"],["themeFont","font"],["bodySize","bodySize"],["headingSize","headingSize"],["buttonSize","buttonSize"]]) {
+        document.getElementById(id).value = d[key];
+      }
+    }
+    function renderAll() {
+      applyDesign(); renderUser(); renderButtonEditor(); renderBannerEditor(); renderMovieEditor(); fillSettings();
+    }
+    function askDelete(callback) {
+      pendingDelete = callback;
+      document.getElementById("confirmDialog").showModal();
+    }
+    document.getElementById("confirmDelete").onclick = () => {
+      if (pendingDelete) pendingDelete();
+      pendingDelete = null; document.getElementById("confirmDialog").close();
+    };
+    document.getElementById("cancelDelete").onclick = () => {
+      pendingDelete = null; document.getElementById("confirmDialog").close();
+    };
+
+    document.getElementById("addButton").onclick =
