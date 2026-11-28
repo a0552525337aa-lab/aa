@@ -1,1465 +1,399 @@
-تم تصميم نظام متكامل يجمع بين واجهة المستخدمين العامة (Viewer Hub) المستوحاة بدقة من الهوية البصرية المرفقة في الصورة (الخلفية الداكنة الفاخرة مع تدرجات الذهبي والحواف الدائرية والزجاجية)، وبين لوحة تحكم الأدمن (Admin Dashboard) المتكاملة والمرتبطة بها لحظياً عبر التخزين المحلي (localStorage) لتطبيق كافة التعديلات مباشرة.
-أبرز مميزات الحل البرمجي المتكامل:
- * واجهة المستخدمين (بدون صلاحيات أدمن):
-   * شاشة عرض ذكية: تعرض البث المباشر النشط (YouTube, Kick, Twitch, X، أو رابط مباشر)، وفي حال عدم وجود بث تعرض تلقائياً المحتوى البديل الذي تحدده من لوحة التحكم (فيديو مسجل، صورة إعلانية، أو رسالة ترحيبية).
-   * الأزرار الخمسة الأساسية بتصميم متناسق:
-     * عرض البث المباشر (الزر الذهبي الرئيسي البارز لتشغيل/إظهار البث).
-     * رابط موقعي (ينقل الزائر إلى almoghani.net أو أي رابط تحدده).
-     * تحديث البث (يُحدّث حالة البث والبيانات مع مؤشر تفاعلي).
-     * راسلني (يفتح وسيلة التواصل المباشرة مثل واتساب أو تيليجرام).
-     * شات الذكاء الاصطناعي (يفتح واجهة الدردشة بالذكاء الاصطناعي في /ai).
-   * قسم الأفلام والمجموعات والبنرات: يعرض البنرات الترويجية وقوائم الأفلام المصنفة، وعند النقر على أي فيلم يتم تشغيله مباشرة في شاشة العرض الرئيسية.
- * لوحة تحكم الأدمن المتكاملة (Admin Dashboard):
-   * إدارة البث والشاشة البديلة: تشغيل/إيقاف البث النشط للجمهور، وضع رابط البث، أو ضبط شاشة التوقف (فيديو بديل / رسالة / صورة).
-   * إدارة الأزرار: تعديل مسميات وروابط وأيقونات الأزرار الخمسة، إضافة أزرار جديدة، أو حذف أي زر مع نافذة تأكيد.
-   * إدارة البنرات والصور: إضافة وتعديل وحذف البنرات الإعلانية.
-   * إدارة الأفلام والمجموعات: إنشاء تصنيفات/مجموعات أفلام وإضافة الأفلام داخلها (العنوان، الوصف، البوستر، رابط التشغيل) أو حذفها.
-   * تخصيص الهوية البصرية والخطوط: تغيير الألوان (الأساسي الذهبي، الخلفية، البطاقات، النصوص) ونوع الخط وحجم العناوين والنصوص مع تطبيق فوري على واجهة المستخدم.
-طريقة الاستخدام والتشغيل:
-يمكنك حفظ الكود أدناه في ملف واحد باسم index.html (أو تقسيمه إلى صفحتين حسب رغبتك). للتبديل السريع والمعاينة الفورية بين واجهة الجمهور و لوحة تحكم الأدمن، أضفنا زراً صغيراً أنيقاً في زاوية الشاشة السفلية (رمز القفل 🔐) يفتح لوحة التحكم برمز مرور افتراضي (1234 قابل للتغيير).
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>المغني لايف | البث المباشر والسينما</title>
-  <!-- خطوط عربية عصرية من Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <!-- مكتبة أيقونات Lucide -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <style>
-    /* ==========================================================================
-       1. المتغيرات البصرية الديناميكية (يتم التحكم بها من لوحة الأدمن)
-       ========================================================================== */
-    :root {
-      --bg-main: #090a0d;
-      --bg-card: #12141a;
-      --bg-surface: #181b23;
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-gold: rgba(226, 179, 75, 0.35);
-      --accent-primary: #e2b34b;
-      --accent-gradient: linear-gradient(135deg, #f3cf7a 0%, #d49b27 100%);
-      --text-primary: #f5f6f8;
-      --text-secondary: #9ca3af;
-      --font-family: 'Tajawal', sans-serif;
-      --title-size: 1.25rem;
-      --body-size: 0.95rem;
-      --btn-size: 0.95rem;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: var(--font-family);
-    }
-
-    body {
-      background-color: var(--bg-main);
-      color: var(--text-primary);
-      font-size: var(--body-size);
-      line-height: 1.6;
-      min-height: 100vh;
-      padding-bottom: 5rem;
-    }
-
-    /* الحاوية الرئيسية المحاكية لتصميم البطاقات المرجعية */
-    .app-container {
-      max-width: 540px;
-      margin: 0 auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    /* البطاقات الداكنة ذات الحواف الدائرية */
-    .card {
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: 20px;
-      padding: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-      transition: border-color 0.25s ease;
-    }
-
-    .card-gold-border {
-      border-color: var(--border-gold);
-    }
-
-    /* ==========================================================================
-       2. شاشة العرض الرئيسية (Video / Stream Screen)
-       ========================================================================== */
-    .screen-wrapper {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      background: radial-gradient(circle at center, #1b1e28 0%, #0b0c10 100%);
-      border-radius: 14px;
-      overflow: hidden;
-      border: 1px solid var(--border-subtle);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .screen-wrapper iframe,
-    .screen-wrapper video,
-    .screen-wrapper img.fallback-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border: none;
-    }
-
-    /* حالة انتظار البث (مطابقة للصورة المرجعية) */
-    .offline-placeholder {
-      text-align: center;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      z-index: 2;
-    }
-
-    .pulse-icon-box {
-      width: 54px;
-      height: 54px;
-      border-radius: 16px;
-      background: rgba(226, 179, 75, 0.12);
-      border: 1px solid var(--border-gold);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--accent-primary);
-      animation: pulseGlow 2.2s infinite;
-    }
-
-    @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(226, 179, 75, 0.25); }
-      50% { box-shadow: 0 0 0 12px rgba(226, 179, 75, 0); }
-    }
-
-    .offline-title {
-      font-size: var(--title-size);
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .offline-subtitle {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      max-width: 320px;
-    }
-
-    /* شريط تحكم الشاشة السفلي (كتم الصوت / ملء الشاشة + مؤشر الحالة) */
-    .screen-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 12px;
-      padding-top: 10px;
-      border-top: 1px solid var(--border-subtle);
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-    }
-
-    .status-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background-color: #6b7280;
-    }
-
-    .status-dot.live {
-      background-color: #10b981;
-      box-shadow: 0 0 10px #10b981;
-    }
-
-    .toolbar-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .icon-btn:hover {
-      border-color: var(--border-gold);
-      color: var(--accent-primary);
-    }
-
-    /* ==========================================================================
-       3. الأزرار التفاعلية للمستخدمين
-       ========================================================================== */
-    .buttons-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .buttons-grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .user-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 13px 16px;
-      border-radius: 14px;
-      font-size: var(--btn-size);
-      font-weight: 700;
-      text-decoration: none;
-      cursor: pointer;
-      border: 1px solid var(--border-subtle);
-      background-color: var(--bg-surface);
-      color: var(--text-primary);
-      transition: all 0.22s ease;
-      user-select: none;
-    }
-
-    .user-btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      border-color: var(--border-gold);
-      background-color: #1e222d;
-    }
-
-    .user-btn:active:not(:disabled) {
-      transform: scale(0.98);
-    }
-
-    .user-btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
-    /* الزر الذهبي الرئيسي (مطابق لزر "بدء البث للجمهور" في الصورة المرجعية) */
-    .user-btn-gold {
-      background: var(--accent-gradient);
-      color: #12100b;
-      border: none;
-      box-shadow: 0 6px 20px rgba(226, 179, 75, 0.25);
-    }
-
-    .user-btn-gold:hover:not(:disabled) {
-      filter: brightness(1.07);
-      background: var(--accent-gradient);
-    }
-
-    /* زر التحديث الصغير */
-    .refresh-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 14px;
-      border-radius: 12px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-primary);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .refresh-pill:hover {
-      border-color: var(--border-gold);
-      color: var(--accent-primary);
-    }
-
-    .spin {
-      animation: spinAnim 0.7s linear infinite;
-    }
-
-    @keyframes spinAnim {
-      100% { transform: rotate(360deg); }
-    }
-
-    /* ==========================================================================
-       4. البنرات الإعلانية وقسم الأفلام والمجموعات
-       ========================================================================== */
-    .banner-box {
-      position: relative;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid var(--border-gold);
-      display: block;
-      text-decoration: none;
-    }
-
-    .banner-box img {
-      width: 100%;
-      max-height: 150px;
-      object-fit: cover;
-      display: block;
-    }
-
-    .banner-caption {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      left: 0;
-      padding: 10px 14px;
-      background: linear-gradient(to top, rgba(9, 10, 13, 0.92), transparent);
-      color: #fff;
-      font-size: 0.9rem;
-      font-weight: 700;
-    }
-
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-
-    .section-title {
-      font-size: var(--title-size);
-      font-weight: 800;
-      color: var(--accent-primary);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .category-tabs {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-      margin-bottom: 12px;
-    }
-
-    .cat-tab {
-      padding: 6px 14px;
-      border-radius: 20px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      font-weight: 600;
-      white-space: nowrap;
-      cursor: pointer;
-    }
-
-    .cat-tab.active {
-      background: var(--accent-gradient);
-      color: #111;
-      border-color: transparent;
-    }
-
-    .movies-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-
-    .movie-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 14px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: 0.25s;
-    }
-
-    .movie-card:hover {
-      border-color: var(--border-gold);
-      transform: translateY(-3px);
-    }
-
-    .movie-poster {
-      width: 100%;
-      aspect-ratio: 16 / 10;
-      object-fit: cover;
-      background: #0d0f14;
-    }
-
-    .movie-info {
-      padding: 10px;
-    }
-
-    .movie-title {
-      font-weight: 700;
-      font-size: 0.92rem;
-      margin-bottom: 4px;
-      color: var(--text-primary);
-    }
-
-    .movie-desc {
-      font-size: 0.78rem;
-      color: var(--text-secondary);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    /* ==========================================================================
-       5. لوحة تحكم الأدمن (Admin Dashboard Modal / View)
-       ========================================================================== */
-    .admin-floating-trigger {
-      position: fixed;
-      bottom: 16px;
-      left: 16px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-gold);
-      color: var(--accent-primary);
-      padding: 10px 14px;
-      border-radius: 50px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      z-index: 999;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-    }
-
-    .admin-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(5, 6, 8, 0.95);
-      z-index: 1000;
-      overflow-y: auto;
-      padding: 16px;
-    }
-
-    .admin-overlay.open {
-      display: block;
-    }
-
-    .admin-container {
-      max-width: 820px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .admin-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--bg-card);
-      padding: 16px 20px;
-      border-radius: 18px;
-      border: 1px solid var(--border-gold);
-    }
-
-    .admin-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .admin-tab-btn {
-      padding: 9px 14px;
-      border-radius: 12px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-      font-weight: 700;
-      font-size: 0.85rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .admin-tab-btn.active {
-      background: var(--accent-gradient);
-      color: #111;
-      border-color: transparent;
-    }
-
-    .admin-panel {
-      display: none;
-    }
-
-    .admin-panel.active {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .form-group label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-    }
-
-    .form-control {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-primary);
-      padding: 10px 12px;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      outline: none;
-    }
-
-    .form-control:focus {
-      border-color: var(--accent-primary);
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .item-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      background: var(--bg-surface);
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .btn-danger {
-      background: rgba(239, 68, 68, 0.15);
-      color: #f87171;
-      border: 1px solid rgba(239, 68, 68, 0.35);
-      padding: 7px 12px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.82rem;
-    }
-
-    .btn-danger:hover {
-      background: rgba(239, 68, 68, 0.3);
-    }
-
-    .toast-msg {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--accent-gradient);
-      color: #111;
-      padding: 10px 22px;
-      border-radius: 30px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      z-index: 2000;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-      display: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الأدمن - إدارة البث والأفلام</title>
+    <!-- استدعاء Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- استدعاء خط Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- استدعاء أيقونات FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* المتغيرات الافتراضية للهوية البصرية */
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --primary-gold: #c5a059;
+            --secondary-gold: #e6c875;
+            --text-color: #ffffff;
+            --font-family: 'Cairo', sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .gold-gradient {
+            background: linear-gradient(135deg, var(--primary-gold), var(--secondary-gold));
+        }
+        .gold-text {
+            color: var(--primary-gold);
+        }
+        .card-dark {
+            background-color: var(--card-bg);
+            border: 1px solid #30363d;
+        }
+        .input-dark {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            color: white;
+        }
+        .input-dark:focus {
+            border-color: var(--primary-gold);
+            outline: none;
+        }
+        /* شريط تمرير مخصص */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0d1117; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-gold); }
+    </style>
 </head>
-<body>
+<body class="p-4 md:p-8 min-h-screen">
 
-  <!-- إشعار التنبيهات السريعة -->
-  <div id="toast" class="toast-msg">تم حفظ التغييرات وتطبيقها بنجاح ✓</div>
+    <div class="max-w-6xl mx-auto">
+        <!-- الهيدر -->
+        <header class="flex justify-between items-center mb-8 pb-4 border-b border-gray-700">
+            <div>
+                <h1 class="text-2xl font-bold gold-text">لوحة التحكم <i class="fa-solid fa-sliders text-sm"></i></h1>
+                <p class="text-gray-400 text-sm mt-1">إدارة واجهة المستخدم، البث، والهوية البصرية</p>
+            </div>
+            <button onclick="saveAllSettings()" class="gold-gradient text-black font-bold py-2 px-6 rounded-xl hover:opacity-90 transition shadow-lg shadow-yellow-900/20">
+                <i class="fa-solid fa-floppy-disk ml-2"></i> حفظ التعديلات
+            </button>
+        </header>
 
-  <!-- ========================================================================
-       القسم الأول: واجهة المستخدمين العامة (Viewer Interface)
-       ======================================================================== -->
-  <main class="app-container" id="userView">
-
-    <!-- 1. بطاقة شاشة البث والعرض -->
-    <section class="card card-gold-border">
-      <div class="screen-wrapper" id="mainScreen">
-        <!-- يتم حقن المشغل أو المحتوى البديل هنا برمجياً -->
-      </div>
-
-      <!-- شريط حالة البث وأدوات العرض للمستخدم -->
-      <div class="screen-toolbar">
-        <div class="status-badge">
-          <span class="status-dot" id="statusDot"></span>
-          <span id="statusText">بانتظار الإشارة</span>
+        <!-- التبويبات (Navigation Tabs) -->
+        <div class="flex flex-wrap gap-2 mb-6" id="tabs">
+            <button onclick="switchTab('buttons')" class="tab-btn active bg-gray-800 text-white py-2 px-4 rounded-lg border border-[#c5a059]"><i class="fa-solid fa-hand-pointer ml-2"></i>الأزرار</button>
+            <button onclick="switchTab('display')" class="tab-btn bg-[#161b22] text-gray-400 py-2 px-4 rounded-lg hover:text-white"><i class="fa-solid fa-tv ml-2"></i>شاشة العرض</button>
+            <button onclick="switchTab('banners')" class="tab-btn bg-[#161b22] text-gray-400 py-2 px-4 rounded-lg hover:text-white"><i class="fa-solid fa-images ml-2"></i>البنرات</button>
+            <button onclick="switchTab('movies')" class="tab-btn bg-[#161b22] text-gray-400 py-2 px-4 rounded-lg hover:text-white"><i class="fa-solid fa-film ml-2"></i>الأفلام</button>
+            <button onclick="switchTab('theme')" class="tab-btn bg-[#161b22] text-gray-400 py-2 px-4 rounded-lg hover:text-white"><i class="fa-solid fa-palette ml-2"></i>الهوية البصرية</button>
         </div>
 
-        <div class="toolbar-actions">
-          <button class="icon-btn" onclick="toggleMute()" title="كتم / تشغيل الصوت">
-            <i data-lucide="volume-2" id="muteIcon" size="18"></i>
-          </button>
-          <button class="icon-btn" onclick="toggleFullscreen()" title="ملء الشاشة">
-            <i data-lucide="maximize" size="18"></i>
-          </button>
-        </div>
-      </div>
-    </section>
+        <!-- ================= قسم 1: إدارة الأزرار ================= -->
+        <section id="tab-buttons" class="tab-content block">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- نموذج الإضافة -->
+                <div class="card-dark p-6 rounded-2xl h-fit">
+                    <h3 class="text-lg font-bold mb-4 gold-text">إضافة زر جديد</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm mb-1 text-gray-300">اسم الزر</label>
+                            <input type="text" id="btnName" class="w-full input-dark rounded-lg p-2" placeholder="مثال: راسلني">
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1 text-gray-300">الرابط / الوظيفة</label>
+                            <input type="text" id="btnLink" class="w-full input-dark rounded-lg p-2" placeholder="https://...">
+                        </div>
+                        <button onclick="addButton()" class="w-full gold-gradient text-black font-bold py-2 rounded-lg mt-2 hover:opacity-90"><i class="fa-solid fa-plus ml-1"></i> إضافة الزر</button>
+                    </div>
+                </div>
 
-    <!-- 2. بطاقة الأزرار الخمسة المخصصة للمستخدمين (بدون أي تحكمات أدمن) -->
-    <section class="card">
-      <div class="buttons-stack" id="userButtonsContainer">
-        <!-- يتم توليد الأزرار ديناميكياً من الإعدادات المحفوظة -->
-      </div>
-    </section>
+                <!-- قائمة الأزرار الحالية -->
+                <div class="md:col-span-2 card-dark p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold mb-4">الأزرار الحالية</h3>
+                    <div id="buttonsList" class="space-y-3">
+                        <!-- سيتم إضافة الأزرار هنا عبر JS -->
+                        <div class="flex items-center justify-between bg-gray-900 border border-gray-700 p-3 rounded-xl">
+                            <div>
+                                <p class="font-bold text-white">رابط موقعي</p>
+                                <p class="text-xs text-gray-400">https://almoghani.net</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="text-blue-400 hover:text-blue-300 p-2"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deleteElement(this, 'هل أنت متأكد من حذف هذا الزر؟')" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between bg-gray-900 border border-gray-700 p-3 rounded-xl">
+                            <div>
+                                <p class="font-bold text-white">شات الذكاء الاصطناعي</p>
+                                <p class="text-xs text-gray-400">فتح الدردشة</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="text-blue-400 hover:text-blue-300 p-2"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deleteElement(this, 'هل أنت متأكد من حذف هذا الزر؟')" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <!-- 3. شريط عنوان البث وزر التحديث السريع -->
-    <section class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-      <div>
-        <h2 style="font-size: 1.05rem; font-weight: 800;" id="streamHeading">البث المباشر — المغني لايف</h2>
-        <p style="font-size: 0.82rem; color: var(--text-secondary);" id="streamSubheading">اضغط «عرض البث المباشر» أو اختر فيلماً من المكتبة بالأسفل</p>
-      </div>
-      <button class="refresh-pill" onclick="refreshStreamStatus(this)">
-        <i data-lucide="refresh-cw" size="15"></i>
-        <span>تحديث</span>
-      </button>
-    </section>
+        <!-- ================= قسم 2: شاشة العرض البديلة ================= -->
+        <section id="tab-display" class="tab-content hidden">
+            <div class="card-dark p-6 rounded-2xl max-w-2xl mx-auto">
+                <h3 class="text-lg font-bold mb-4 gold-text">تخصيص محتوى شاشة العرض (عند عدم وجود بث)</h3>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center gap-4 bg-gray-900 p-4 rounded-xl border border-gray-700">
+                        <input type="radio" name="displayType" id="typeLive" class="accent-[#c5a059]" checked onchange="toggleDisplayOptions()">
+                        <label for="typeLive" class="cursor-pointer">بث مباشر نشط</label>
+                    </div>
+                    <div class="flex items-center gap-4 bg-gray-900 p-4 rounded-xl border border-gray-700">
+                        <input type="radio" name="displayType" id="typeVideo" class="accent-[#c5a059]" onchange="toggleDisplayOptions()">
+                        <label for="typeVideo" class="cursor-pointer">فيديو مسجل / بث بديل</label>
+                    </div>
+                    <div class="flex items-center gap-4 bg-gray-900 p-4 rounded-xl border border-gray-700">
+                        <input type="radio" name="displayType" id="typeMessage" class="accent-[#c5a059]" onchange="toggleDisplayOptions()">
+                        <label for="typeMessage" class="cursor-pointer">رسالة ترحيبية</label>
+                    </div>
 
-    <!-- 4. البنرات الإعلانية والترويجية -->
-    <section id="bannersSection" style="display: flex; flex-direction: column; gap: 12px;">
-      <!-- يتم عرض البنرات النشطة هنا -->
-    </section>
+                    <!-- حقول الإدخال الديناميكية -->
+                    <div id="videoOptions" class="hidden mt-4">
+                        <label class="block text-sm mb-1 text-gray-300">رابط الفيديو (YouTube أو MP4)</label>
+                        <input type="text" class="w-full input-dark rounded-lg p-3" placeholder="https://youtube.com/watch?v=...">
+                    </div>
+                    <div id="messageOptions" class="hidden mt-4">
+                        <label class="block text-sm mb-1 text-gray-300">نص الرسالة الترحيبية</label>
+                        <textarea class="w-full input-dark rounded-lg p-3" rows="3" placeholder="أهلاً بكم في قناتي، البث سيبدأ قريباً..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <!-- 5. مكتبة الأفلام ومجموعات العرض -->
-    <section class="card" id="moviesSection">
-      <div class="section-header">
-        <h3 class="section-title">
-          <i data-lucide="film" size="20"></i>
-          <span>مكتبة الأفلام والعروض</span>
-        </h3>
-      </div>
+        <!-- ================= قسم 3: البنرات ================= -->
+        <section id="tab-banners" class="tab-content hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="card-dark p-6 rounded-2xl h-fit">
+                    <h3 class="text-lg font-bold mb-4 gold-text">إضافة بنر</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm mb-1 text-gray-300">رابط الصورة</label>
+                            <input type="text" id="bannerUrl" class="w-full input-dark rounded-lg p-2" placeholder="https://.../image.jpg">
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1 text-gray-300">رابط التوجيه (اختياري)</label>
+                            <input type="text" id="bannerLink" class="w-full input-dark rounded-lg p-2" placeholder="https://...">
+                        </div>
+                        <button onclick="addBanner()" class="w-full gold-gradient text-black font-bold py-2 rounded-lg hover:opacity-90"><i class="fa-solid fa-upload ml-1"></i> رفع وإضافة</button>
+                    </div>
+                </div>
+                <div class="md:col-span-2 card-dark p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold mb-4">البنرات الحالية</h3>
+                    <div class="grid grid-cols-2 gap-4" id="bannersList">
+                        <!-- عنصر بنر تجريبي -->
+                        <div class="relative group rounded-xl overflow-hidden border border-gray-700">
+                            <img src="https://via.placeholder.com/400x150/161b22/c5a059?text=Banner+1" alt="Banner" class="w-full h-32 object-cover">
+                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3">
+                                <button class="text-white hover:text-red-500 bg-gray-800 p-2 rounded-full" onclick="deleteElement(this, 'حذف هذا البنر؟')"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-      <!-- تبويبات مجموعات الأفلام -->
-      <div class="category-tabs" id="movieCategoryTabs"></div>
+        <!-- ================= قسم 4: إدارة الأفلام ================= -->
+        <section id="tab-movies" class="tab-content hidden">
+            <div class="card-dark p-6 rounded-2xl">
+                <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+                    <h3 class="text-lg font-bold gold-text">مكتبة الأفلام</h3>
+                    <button class="gold-gradient text-black font-bold py-2 px-4 rounded-lg text-sm hover:opacity-90"><i class="fa-solid fa-plus ml-1"></i> إضافة فيلم جديد</button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right">
+                        <thead>
+                            <tr class="text-gray-400 text-sm border-b border-gray-700">
+                                <th class="p-3">اسم الفيلم</th>
+                                <th class="p-3">التصنيف (المجموعة)</th>
+                                <th class="p-3">الرابط</th>
+                                <th class="p-3">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="moviesTable">
+                            <tr class="border-b border-gray-800 hover:bg-gray-800/50">
+                                <td class="p-3 font-bold">فيلم المهمة المستحيلة</td>
+                                <td class="p-3"><span class="bg-gray-700 text-xs px-2 py-1 rounded">أكشن</span></td>
+                                <td class="p-3 text-gray-400 text-sm truncate max-w-[150px]">https://youtu.be/...</td>
+                                <td class="p-3">
+                                    <button class="text-blue-400 hover:text-blue-300 ml-2"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteElement(this, 'هل تريد حذف الفيلم من المكتبة؟')" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-800/50">
+                                <td class="p-3 font-bold">فيلم Interstellar</td>
+                                <td class="p-3"><span class="bg-gray-700 text-xs px-2 py-1 rounded">خيال علمي</span></td>
+                                <td class="p-3 text-gray-400 text-sm truncate max-w-[150px]">https://youtu.be/...</td>
+                                <td class="p-3">
+                                    <button class="text-blue-400 hover:text-blue-300 ml-2"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteElement(this, 'هل تريد حذف الفيلم من المكتبة؟')" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-      <!-- شبكة عرض الأفلام -->
-      <div class="movies-grid" id="moviesGrid"></div>
-    </section>
+        <!-- ================= قسم 5: الهوية البصرية ================= -->
+        <section id="tab-theme" class="tab-content hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card-dark p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold mb-4 gold-text">الألوان</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center bg-gray-900 p-3 rounded-lg border border-gray-700">
+                            <label>اللون الأساسي (الذهبي)</label>
+                            <input type="color" id="colorPrimary" value="#c5a059" class="bg-transparent border-none cursor-pointer w-10 h-10" oninput="updateTheme()">
+                        </div>
+                        <div class="flex justify-between items-center bg-gray-900 p-3 rounded-lg border border-gray-700">
+                            <label>لون الخلفية الرئيسي</label>
+                            <input type="color" id="colorBg" value="#0d1117" class="bg-transparent border-none cursor-pointer w-10 h-10" oninput="updateTheme()">
+                        </div>
+                        <div class="flex justify-between items-center bg-gray-900 p-3 rounded-lg border border-gray-700">
+                            <label>لون البطاقات (Cards)</label>
+                            <input type="color" id="colorCard" value="#161b22" class="bg-transparent border-none cursor-pointer w-10 h-10" oninput="updateTheme()">
+                        </div>
+                    </div>
+                </div>
 
-  </main>
-
-  <!-- زر عائم لفتح لوحة تحكم الأدمن -->
-  <button class="admin-floating-trigger" onclick="openAdminAuth()">
-    <i data-lucide="shield-check" size="16"></i>
-    <span>إدارة المنصة</span>
-  </button>
-
-  <!-- ========================================================================
-       القسم الثاني: لوحة تحكم الأدمن المتكاملة (Admin Dashboard)
-       ======================================================================== -->
-  <div class="admin-overlay" id="adminOverlay">
-    <div class="admin-container">
-
-      <!-- رأس لوحة التحكم -->
-      <div class="admin-header">
-        <div>
-          <h1 style="font-size: 1.2rem; color: var(--accent-primary); font-weight: 800;">لوحة تحكم الأدمن الشاملة</h1>
-          <p style="font-size: 0.82rem; color: var(--text-secondary);">التعديلات تُحفظ وتُطبق فوراً على واجهة المستخدمين</p>
-        </div>
-        <button class="user-btn" style="padding: 8px 16px;" onclick="closeAdmin()">
-          <i data-lucide="x" size="18"></i>
-          <span>إغلاق</span>
-        </button>
-      </div>
-
-      <!-- تبويبات الأقسام الخمسة المطلوبة -->
-      <div class="admin-tabs">
-        <button class="admin-tab-btn active" onclick="switchAdminTab('tab-stream', this)">
-          <i data-lucide="radio" size="16"></i> البث والشاشة البديلة
-        </button>
-        <button class="admin-tab-btn" onclick="switchAdminTab('tab-buttons', this)">
-          <i data-lucide="mouse-pointer-click" size="16"></i> إدارة الأزرار
-        </button>
-        <button class="admin-tab-btn" onclick="switchAdminTab('tab-banners', this)">
-          <i data-lucide="image" size="16"></i> البنرات والصور
-        </button>
-        <button class="admin-tab-btn" onclick="switchAdminTab('tab-movies', this)">
-          <i data-lucide="clapperboard" size="16"></i> الأفلام والمجموعات
-        </button>
-        <button class="admin-tab-btn" onclick="switchAdminTab('tab-theme', this)">
-          <i data-lucide="palette" size="16"></i> الهوية والخطوط
-        </button>
-      </div>
-
-      <!-- 1. قسم إدارة شاشة العرض والبث البديل -->
-      <div class="card admin-panel active" id="tab-stream">
-        <h3 class="section-title">إدارة البث المباشر والشاشة البديلة</h3>
-        <div class="form-group">
-          <label>حالة البث المباشر للجمهور</label>
-          <select id="admStreamActive" class="form-control">
-            <option value="true">🟢 بث مباشر نشط الآن</option>
-            <option value="false">⚫ متوقف (عرض المحتوى البديل)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>رابط البث المباشر النشط (YouTube, Kick, Twitch, X أو رابط فيديو)</label>
-          <input type="url" id="admStreamUrl" class="form-control" placeholder="https://www.youtube.com/watch?v=..." />
-        </div>
-        <hr style="border-color: var(--border-subtle); margin: 6px 0;">
-        <h4 style="color: var(--accent-primary); font-size: 0.95rem;">إعدادات الشاشة البديلة (عند عدم وجود بث نشط)</h4>
-        <div class="form-group">
-          <label>نوع المحتوى البديل</label>
-          <select id="admFallbackType" class="form-control">
-            <option value="message">رسالة ترحيبية (التصميم الكلاسيكي)</option>
-            <option value="video">فيديو مسجل / بث بديل (رابط فيديو أو يوتيوب)</option>
-            <option value="image">صورة إعلانية ثابتة</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>عنوان الرسالة الترحيبية</label>
-          <input type="text" id="admFallbackTitle" class="form-control" />
-        </div>
-        <div class="form-group">
-          <label>نص الرسالة الفرعية</label>
-          <input type="text" id="admFallbackSub" class="form-control" />
-        </div>
-        <div class="form-group">
-          <label>رابط الفيديو البديل أو الصورة البديلة (اختياري حسب النوع)</label>
-          <input type="url" id="admFallbackMedia" class="form-control" placeholder="https://..." />
-        </div>
-        <button class="user-btn user-btn-gold" onclick="saveStreamSettings()">
-          <i data-lucide="save" size="18"></i> حفظ وتطبيق إعدادات البث
-        </button>
-      </div>
-
-      <!-- 2. قسم إدارة الأزرار (تعديل / إضافة / حذف) -->
-      <div class="card admin-panel" id="tab-buttons">
-        <h3 class="section-title">إدارة أزرار واجهة المستخدم</h3>
-        <div id="admButtonsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
-
-        <hr style="border-color: var(--border-subtle); margin: 8px 0;">
-        <h4 style="color: var(--accent-primary); font-size: 0.95rem;">إضافة زر جديد</h4>
-        <div class="form-row">
-          <div class="form-group">
-            <label>اسم الزر</label>
-            <input type="text" id="newBtnLabel" class="form-control" placeholder="مثال: قناتي على تيليجرام" />
-          </div>
-          <div class="form-group">
-            <label>الأيقونة (اسم أيقونة Lucide)</label>
-            <input type="text" id="newBtnIcon" class="form-control" value="external-link" placeholder="globe, send, bot, tv..." />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>نوع الإجراء</label>
-            <select id="newBtnAction" class="form-control">
-              <option value="link">فتح رابط خارجي</option>
-              <option value="play_live">تشغيل البث المباشر</option>
-              <option value="refresh">تحديث البث</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>الرابط (في حال اختيار فتح رابط)</label>
-            <input type="url" id="newBtnUrl" class="form-control" placeholder="https://..." />
-          </div>
-        </div>
-        <button class="user-btn user-btn-gold" onclick="addNewButton()">
-          <i data-lucide="plus-circle" size="18"></i> إضافة الزر إلى الواجهة
-        </button>
-      </div>
-
-      <!-- 3. قسم إدارة البنرات والصور -->
-      <div class="card admin-panel" id="tab-banners">
-        <h3 class="section-title">إدارة البنرات الإعلانية والصور</h3>
-        <div id="admBannersList" style="display: flex; flex-direction: column; gap: 10px;"></div>
-
-        <hr style="border-color: var(--border-subtle); margin: 8px 0;">
-        <h4 style="color: var(--accent-primary); font-size: 0.95rem;">إضافة بنر ترويجي جديد</h4>
-        <div class="form-group">
-          <label>عنوان البنر</label>
-          <input type="text" id="newBannerTitle" class="form-control" placeholder="مثال: تابعوا تغطية مباريات اليوم" />
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>رابط صورة البنر</label>
-            <input type="url" id="newBannerImg" class="form-control" placeholder="https://images.unsplash.com/..." />
-          </div>
-          <div class="form-group">
-            <label>رابط التوجيه عند النقر (اختياري)</label>
-            <input type="url" id="newBannerLink" class="form-control" placeholder="https://almoghani.net" />
-          </div>
-        </div>
-        <button class="user-btn user-btn-gold" onclick="addNewBanner()">
-          <i data-lucide="plus-circle" size="18"></i> إضافة البنر
-        </button>
-      </div>
-
-      <!-- 4. قسم إدارة الأفلام ومجموعات الأفلام -->
-      <div class="card admin-panel" id="tab-movies">
-        <h3 class="section-title">إدارة مجموعات الأفلام والأفلام</h3>
-
-        <!-- إضافة مجموعة جديدة -->
-        <div class="form-row" style="align-items: end;">
-          <div class="form-group">
-            <label>اسم مجموعة / تصنيف أفلام جديد</label>
-            <input type="text" id="newCatName" class="form-control" placeholder="مثال: أفلام أكشن، وثائقيات..." />
-          </div>
-          <button class="user-btn" onclick="addMovieCategory()">
-            <i data-lucide="folder-plus" size="18"></i> إضافة مجموعة
-          </button>
-        </div>
-
-        <!-- قائمة المجموعات الحالية مع إمكانية الحذف -->
-        <div id="admCategoriesList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;"></div>
-
-        <hr style="border-color: var(--border-subtle); margin: 8px 0;">
-        <h4 style="color: var(--accent-primary); font-size: 0.95rem;">إضافة فيلم جديد</h4>
-        <div class="form-row">
-          <div class="form-group">
-            <label>عنوان الفيلم</label>
-            <input type="text" id="newMovieTitle" class="form-control" placeholder="عنوان الفيلم أو العرض" />
-          </div>
-          <div class="form-group">
-            <label>المجموعة / التصنيف</label>
-            <select id="newMovieCat" class="form-control"></select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>وصف مختصر</label>
-          <input type="text" id="newMovieDesc" class="form-control" placeholder="نبذة قصيرة عن الفيلم..." />
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>رابط صورة البوستر</label>
-            <input type="url" id="newMoviePoster" class="form-control" placeholder="https://..." />
-          </div>
-          <div class="form-group">
-            <label>رابط تشغيل الفيلم (YouTube / MP4)</label>
-            <input type="url" id="newMovieUrl" class="form-control" placeholder="https://..." />
-          </div>
-        </div>
-        <button class="user-btn user-btn-gold" onclick="addNewMovie()">
-          <i data-lucide="film" size="18"></i> حفظ وإضافة الفيلم
-        </button>
-
-        <hr style="border-color: var(--border-subtle); margin: 8px 0;">
-        <h4 style="color: var(--accent-primary); font-size: 0.95rem;">الأفلام المضافة حالياً</h4>
-        <div id="admMoviesList" style="display: flex; flex-direction: column; gap: 8px;"></div>
-      </div>
-
-      <!-- 5. قسم تخصيص الهوية البصرية والخطوط -->
-      <div class="card admin-panel" id="tab-theme">
-        <h3 class="section-title">تخصيص الألوان والخطوط</h3>
-        <div class="form-row">
-          <div class="form-group">
-            <label>اللون الأساسي (الذهبي المميز)</label>
-            <input type="color" id="admColorPrimary" class="form-control" style="height: 44px;" />
-          </div>
-          <div class="form-group">
-            <label>لون الخلفية الرئيسية</label>
-            <input type="color" id="admColorBg" class="form-control" style="height: 44px;" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>لون البطاقات</label>
-            <input type="color" id="admColorCard" class="form-control" style="height: 44px;" />
-          </div>
-          <div class="form-group">
-            <label>لون النصوص الأساسية</label>
-            <input type="color" id="admColorText" class="form-control" style="height: 44px;" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>نوع الخط (Font Family)</label>
-            <select id="admFontFamily" class="form-control">
-              <option value="'Tajawal', sans-serif">Tajawal (تجوال - عصري)</option>
-              <option value="'Cairo', sans-serif">Cairo (القاهرة - واضح)</option>
-              <option value="'IBM Plex Sans Arabic', sans-serif">IBM Plex Arabic (احترافي)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>حجم العناوين</label>
-            <select id="admTitleSize" class="form-control">
-              <option value="1.1rem">متوسط (1.1rem)</option>
-              <option value="1.25rem">قياسي (1.25rem)</option>
-              <option value="1.45rem">كبير (1.45rem)</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>حجم النصوص</label>
-            <select id="admBodySize" class="form-control">
-              <option value="0.88rem">صغير (0.88rem)</option>
-              <option value="0.95rem">قياسي (0.95rem)</option>
-              <option value="1.05rem">كبير (1.05rem)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>حجم خط الأزرار</label>
-            <select id="admBtnSize" class="form-control">
-              <option value="0.9rem">متوسط (0.9rem)</option>
-              <option value="0.95rem">قياسي (0.95rem)</option>
-              <option value="1.05rem">كبير (1.05rem)</option>
-            </select>
-          </div>
-        </div>
-        <div class="buttons-grid-2">
-          <button class="user-btn user-btn-gold" onclick="saveThemeSettings()">
-            <i data-lucide="check-circle" size="18"></i> تطبيق الهوية البصرية
-          </button>
-          <button class="user-btn" onclick="resetDefaultTheme()">
-            <i data-lucide="rotate-ccw" size="18"></i> استعادة الافتراضي
-          </button>
-        </div>
-      </div>
+                <div class="card-dark p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold mb-4 gold-text">الخطوط</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm mb-1 text-gray-300">نوع الخط (Font Family)</label>
+                            <select id="fontFamily" class="w-full input-dark rounded-lg p-3" onchange="updateTheme()">
+                                <option value="'Cairo', sans-serif">Cairo (افتراضي)</option>
+                                <option value="'Tajawal', sans-serif">Tajawal</option>
+                                <option value="Arial, sans-serif">Arial</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1 text-gray-300">حجم النص الأساسي</label>
+                            <input type="range" min="12" max="20" value="16" class="w-full accent-[#c5a059]" oninput="updateTheme()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
     </div>
-  </div>
 
-  <!-- ========================================================================
-       البرمجة والربط الفوري بين واجهة المستخدم ولوحة الأدمن (JavaScript)
-       ======================================================================== -->
-  <script>
-    const STORAGE_KEY = 'almoghani_live_portal_v1';
-    const ADMIN_PASS = '1234'; // رمز الدخول للوحة التحكم
+    <!-- ================= سكربت الجافاسكربت ================= -->
+    <script>
+        // 1. إدارة التبويبات
+        function switchTab(tabId) {
+            // إخفاء كل الأقسام
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('block'));
+            
+            // إزالة التفعيل عن كل الأزرار
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('border', 'border-[#c5a059]', 'text-white');
+                el.classList.add('text-gray-400');
+            });
 
-    // البيانات الافتراضية المهيأة مسبقاً بالأزرار الخمسة المطلوبة
-    const defaultData = {
-      stream: {
-        isActive: false,
-        url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
-        fallbackType: 'message', // message | video | image
-        fallbackTitle: 'لا يوجد بث نشط حالياً',
-        fallbackSub: 'اضغط «عرض البث المباشر» أو «تحديث البث» للتحقق من بدء البث',
-        fallbackMedia: ''
-      },
-      buttons: [
-        { id: 'btn_live', label: 'عرض البث المباشر', icon: 'radio', action: 'play_live', url: '', isPrimary: true },
-        { id: 'btn_site', label: 'رابط موقعي', icon: 'globe', action: 'link', url: 'https://almoghani.net', isPrimary: false },
-        { id: 'btn_refresh', label: 'تحديث البث', icon: 'refresh-cw', action: 'refresh', url: '', isPrimary: false },
-        { id: 'btn_contact', label: 'راسلني', icon: 'message-circle', action: 'link', url: 'https://wa.me/966500000000', isPrimary: false },
-        { id: 'btn_ai', label: 'شات الذكاء الاصطناعي', icon: 'bot', action: 'link', url: 'https://almoghani.net/ai', isPrimary: false }
-      ],
-      banners: [
-        {
-          id: 'bn_1',
-          title: 'مرحباً بكم في منصة المغني للبث المباشر والعروض الحصرية',
-          img: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80',
-          link: 'https://almoghani.net'
+            // إظهار القسم المطلوب وتفعيل الزر
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.add('block');
+            event.currentTarget.classList.remove('text-gray-400');
+            event.currentTarget.classList.add('border', 'border-[#c5a059]', 'text-white');
         }
-      ],
-      categories: ['الكل', 'مختارات خاصة', 'وثائقيات'],
-      movies: [
-        {
-          id: 'mv_1',
-          title: 'جولة في عالم التقنية والابتكار',
-          category: 'وثائقيات',
-          desc: 'عرض وثائقي شيق يستعرض أحدث تقنيات الذكاء الاصطناعي والبث الرقمي.',
-          poster: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
-          url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk'
-        },
-        {
-          id: 'mv_2',
-          title: 'أجمل اللحظات الرياضية',
-          category: 'مختارات خاصة',
-          desc: 'ملخص لأبرز الأهداف واللقطات الحماسية بجودة عالية.',
-          poster: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=600&q=80',
-          url: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
+
+        // 2. إدارة شاشة العرض الديناميكية
+        function toggleDisplayOptions() {
+            const typeVideo = document.getElementById('typeVideo').checked;
+            const typeMessage = document.getElementById('typeMessage').checked;
+            
+            document.getElementById('videoOptions').classList.toggle('hidden', !typeVideo);
+            document.getElementById('messageOptions').classList.toggle('hidden', !typeMessage);
         }
-      ],
-      theme: {
-        primary: '#e2b34b',
-        bg: '#090a0d',
-        card: '#12141a',
-        text: '#f5f6f8',
-        fontFamily: "'Tajawal', sans-serif",
-        titleSize: '1.25rem',
-        bodySize: '0.95rem',
-        btnSize: '0.95rem'
-      }
-    };
 
-    let appState = loadState();
-    let selectedCategory = 'الكل';
+        // 3. إضافة الأزرار ديناميكياً
+        function addButton() {
+            const name = document.getElementById('btnName').value;
+            const link = document.getElementById('btnLink').value;
+            if(!name || !link) return alert('يرجى ملء جميع الحقول');
 
-    function loadState() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return JSON.parse(JSON.stringify(defaultData));
-      try {
-        return { ...defaultData, ...JSON.parse(saved) };
-      } catch {
-        return JSON.parse(JSON.stringify(defaultData));
-      }
-    }
+            const list = document.getElementById('buttonsList');
+            const div = document.createElement('div');
+            div.className = "flex items-center justify-between bg-gray-900 border border-gray-700 p-3 rounded-xl mt-3";
+            div.innerHTML = `
+                <div>
+                    <p class="font-bold text-white">${name}</p>
+                    <p class="text-xs text-gray-400">${link}</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="text-blue-400 hover:text-blue-300 p-2"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteElement(this, 'هل أنت متأكد من حذف هذا الزر؟')" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            list.appendChild(div);
+            
+            // تصفير الحقول
+            document.getElementById('btnName').value = '';
+            document.getElementById('btnLink').value = '';
+        }
 
-    function persistState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-      renderAll();
-      showToast('تم حفظ التغييرات وتطبيقها بنجاح ✓');
-    }
+        // 4. إضافة بنر (محاكاة)
+        function addBanner() {
+            const url = document.getElementById('bannerUrl').value;
+            if(!url) return alert('يرجى إدخال رابط الصورة');
+            
+            const list = document.getElementById('bannersList');
+            const div = document.createElement('div');
+            div.className = "relative group rounded-xl overflow-hidden border border-gray-700";
+            div.innerHTML = `
+                <img src="${url}" alt="Banner" class="w-full h-32 object-cover" onerror="this.src='https://via.placeholder.com/400x150?text=Error'">
+                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3">
+                    <button class="text-white hover:text-red-500 bg-gray-800 p-2 rounded-full" onclick="deleteElement(this, 'حذف هذا البنر؟')"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            list.appendChild(div);
+            document.getElementById('bannerUrl').value = '';
+        }
 
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.style.display = 'block';
-      setTimeout(() => { t.style.display = 'none'; }, 2600);
-    }
+        // 5. دالة الحذف مع التأكيد
+        function deleteElement(btn, confirmMsg) {
+            if(confirm(confirmMsg)) {
+                // حذف العنصر الأب (الصف أو البطاقة)
+                const parent = btn.closest('.flex') || btn.closest('.relative') || btn.closest('tr');
+                if(parent) parent.remove();
+            }
+        }
 
-    /* ==========================================================================
-       تحويل روابط اليوتيوب / الفيديو إلى صيغة تضمين قابلة للتشغيل
-       ========================================================================== */
-    function getEmbedUrl(url) {
-      if (!url) return '';
-      const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|live\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-      if (ytMatch) {
-        return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0`;
-      }
-      return url;
-    }
+        // 6. تحديث الهوية البصرية فورياً
+        function updateTheme() {
+            const primary = document.getElementById('colorPrimary').value;
+            const bg = document.getElementById('colorBg').value;
+            const card = document.getElementById('colorCard').value;
+            const font = document.getElementById('fontFamily').value;
 
-    function renderVideoPlayer(url) {
-      const screen = document.getElementById('mainScreen');
-      const embed = getEmbedUrl(url);
-      if (url.endsWith('.mp4') || url.endsWith('.m3u8')) {
-        screen.innerHTML = `<video id="activeVideoEl" src="${url}" controls autoplay playsinline></video>`;
-      } else {
-        screen.innerHTML = `<iframe src="${embed}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>`;
-      }
-    }
+            // تحديث متغيرات CSS
+            document.documentElement.style.setProperty('--primary-gold', primary);
+            document.documentElement.style.setProperty('--bg-color', bg);
+            document.documentElement.style.setProperty('--card-bg', card);
+            document.documentElement.style.setProperty('--font-family', font);
+        }
 
-    /* ==========================================================================
-       عرض شاشة البث أو المحتوى البديل
-       ========================================================================== */
-    function renderScreen(forcePlayLive = false) {
-      const screen = document.getElementById('mainScreen');
-      const dot = document.getElementById('statusDot');
-      const statusText = document.getElementById('statusText');
+        // 7. محاكاة حفظ التعديلات (في الواقع يتم إرسال طلب API)
+        function saveAllSettings() {
+            // هنا يتم جمع البيانات وإرسالها لقاعدة البيانات
+            // مثال: fetch('/api/save', { method: 'POST', body: JSON.stringify(data) })
+            
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin ml-2"></i> جاري الحفظ...';
+            btn.disabled = true;
 
-      if (appState.stream.isActive || forcePlayLive) {
-        dot.classList.add('live');
-        statusText.textContent = appState.stream.isActive ? 'بث مباشر الآن' : 'معاينة البث';
-        statusText.style.color = '#10b981';
-        renderVideoPlayer(appState.stream.url);
-        return;
-      }
-
-      // في حال عدم وجود بث نشط -> عرض المحتوى البديل
-      dot.classList.remove('live');
-      statusText.textContent = 'بانتظار الإشارة';
-      statusText.style.color = 'var(--text-secondary)';
-
-      if (appState.stream.fallbackType === 'video' && appState.stream.fallbackMedia) {
-        renderVideoPlayer(appState.stream.fallbackMedia);
-      } else if (appState.stream.fallbackType === 'image' && appState.stream.fallbackMedia) {
-        screen.innerHTML = `<img src="${appState.stream.fallbackMedia}" class="fallback-img" alt="عرض بديل" />`;
-      } else {
-        screen.innerHTML = `
-          <div class="offline-placeholder">
-            <div class="pulse-icon-box">
-              <i data-lucide="radio" size="26"></i>
-            </div>
-            <div class="offline-title">${appState.stream.fallbackTitle}</div>
-            <div class="offline-subtitle">${appState.stream.fallbackSub}</div>
-          </div>
-        `;
-      }
-    }
-
-    /* ==========================================================================
-       توليد الأزرار التفاعلية للمستخدمين
-       ========================================================================== */
-    function renderUserButtons() {
-      const container = document.getElementById('userButtonsContainer');
-      container.innerHTML = '';
-
-      // فصل الزر الرئيسي الأول (عرض البث المباشر) عن بقية الأزرار لتنسيقها في شبكة ثنائية أنيقة
-      const primaryBtns = appState.buttons.filter(b => b.isPrimary);
-      const secondaryBtns = appState.buttons.filter(b => !b.isPrimary);
-
-      primaryBtns.forEach(btn => {
-        container.appendChild(createButtonElement(btn, true));
-      });
-
-      if (secondaryBtns.length > 0) {
-        const grid = document.createElement('div');
-        grid.className = 'buttons-grid-2';
-        secondaryBtns.forEach(btn => {
-          grid.appendChild(createButtonElement(btn, false));
-        });
-        container.appendChild(grid);
-      }
-    }
-
-    function createButtonElement(btn, isGold) {
-      const el = btn.action === 'link' ? document.createElement('a') : document.createElement('button');
-      el.className = `user-btn ${isGold ? 'user-btn-gold' : ''}`;
-      el.innerHTML = `<i data-lucide="${btn.icon || 'link'}" size="18"></i><span>${btn.label}</span>`;
-
-      if (btn.action === 'link') {
-        el.href = btn.url || '#';
-        el.target = '_blank';
-        el.rel = 'noopener noreferrer';
-      } else if (btn.action === 'play_live') {
-        el.onclick = () => {
-          renderScreen(true);
-          showToast('جاري تحميل شاشة البث المباشر...');
-        };
-      } else if (btn.action === 'refresh') {
-        el.onclick = () => refreshStreamStatus(el);
-      }
-      return el;
-    }
-
-    function refreshStreamStatus(btnEl) {
-      const icon = btnEl.querySelector('svg');
-      if (icon) icon.classList.add('spin');
-      setTimeout(() => {
-        if (icon) icon.classList.remove('spin');
-        appState = loadState();
-        renderAll();
-        showToast(appState.stream.isActive ? 'البث المباشر متاح الآن!' : 'تم التحديث: لا يوجد بث مباشر نشط حالياً');
-      }, 650);
-    }
-
-    function toggleMute() {
-      const vid = document.getElementById('activeVideoEl');
-      if (vid) {
-        vid.muted = !vid.muted;
-        showToast(vid.muted ? 'تم كتم الصوت' : 'تم تشغيل الصوت');
-      } else {
-        showToast('التحكم بالصوت متاح من داخل مشغل الفيديو');
-      }
-    }
-
-    function toggleFullscreen() {
-      const screen = document.getElementById('mainScreen');
-      if (screen.requestFullscreen) screen.requestFullscreen();
-    }
-
-    /* ==========================================================================
-       عرض البنرات والأفلام
-       ========================================================================== */
-    function renderBanners() {
-      const sec = document.getElementById('bannersSection');
-      sec.innerHTML = appState.banners.map(b => `
-        <a href="${b.link || '#'}" ${b.link ? 'target="_blank"' : ''} class="banner-box">
-          <img src="${b.img}" alt="${b.title}" />
-          ${b.title ? `<div class="banner-caption">${b.title}</div>` : ''}
-        </a>
-      `).join('');
-    }
-
-    function renderMovies() {
-      const tabsEl = document.getElementById('movieCategoryTabs');
-      const gridEl = document.getElementById('moviesGrid');
-
-      tabsEl.innerHTML = appState.categories.map(cat => `
-        <button class="cat-tab ${selectedCategory === cat ? 'active' : ''}" onclick="selectCategory('${cat}')">${cat}</button>
-      `).join('');
-
-      const filtered = selectedCategory === 'الكل'
-        ? appState.movies
-        : appState.movies.filter(m => m.category === selectedCategory);
-
-      if (filtered.length === 0) {
-        gridEl.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-secondary); padding: 16px;">لا توجد أفلام في هذا التصنيف حالياً</p>`;
-        return;
-      }
-
-      gridEl.innerHTML = filtered.map(m => `
-        <div class="movie-card" onclick="playMovie('${m.id}')">
-          <img src="${m.poster}" class="movie-poster" alt="${m.title}" />
-          <div class="movie-info">
-            <div class="movie-title">${m.title}</div>
-            <div class="movie-desc">${m.desc}</div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function selectCategory(cat) {
-      selectedCategory = cat;
-      renderMovies();
-    }
-
-    function playMovie(movieId) {
-      const movie = appState.movies.find(m => m.id === movieId);
-      if (!movie) return;
-      document.getElementById('statusDot').classList.add('live');
-      document.getElementById('statusText').textContent = `يُعرض الآن: ${movie.title}`;
-      document.getElementById('statusText').style.color = 'var(--accent-primary)';
-      renderVideoPlayer(movie.url);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    /* ==========================================================================
-       تطبيق الهوية البصرية والألوان والخطوط
-       ========================================================================== */
-    function applyTheme() {
-      const r = document.documentElement.style;
-      const t = appState.theme;
-      r.setProperty('--accent-primary', t.primary);
-      r.setProperty('--accent-gradient', `linear-gradient(135deg, ${t.primary} 0%, ${t.primary}cc 100%)`);
-      r.setProperty('--bg-main', t.bg);
-      r.setProperty('--bg-card', t.card);
-      r.setProperty('--text-primary', t.text);
-      r.setProperty('--font-family', t.fontFamily);
-      r.setProperty('--title-size', t.titleSize);
-      r.setProperty('--body-size', t.bodySize);
-      r.setProperty('--btn-size', t.btnSize);
-    }
-
-    /* ==========================================================================
-       وظائف لوحة تحكم الأدمن (Admin Functions)
-       ========================================================================== */
-    function openAdminAuth() {
-      const pass = prompt('أدخل رمز مرور لوحة التحكم (الافتراضي 1234):');
-      if (pass === ADMIN_PASS) {
-        populateAdminForms();
-        document.getElementById('adminOverlay').classList.add('open');
-      } else if (pass !== null) {
-        alert('رمز المرور غير صحيح');
-      }
-    }
-
-    function closeAdmin() {
-      document.getElementById('adminOverlay').classList.remove('open');
-    }
-
-    function switchAdminTab(tabId, btnEl) {
-      document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      btnEl.classList.add('active');
-    }
-
-    function populateAdminForms() {
-      // 1. البث
-      document.getElementById('admStreamActive').value = String(appState.stream.isActive);
-      document.getElementById('admStreamUrl').value = appState.stream.url;
-      document.getElementById('admFallbackType').value = appState.stream.fallbackType;
-      document.getElementById('admFallbackTitle').value = appState.stream.fallbackTitle;
-      document.getElementById('admFallbackSub').value = appState.stream.fallbackSub;
-      document.getElementById('admFallbackMedia').value = appState.stream.fallbackMedia;
-
-      // 2. الأزرار
-      const btnList = document.getElementById('admButtonsList');
-      btnList.innerHTML = appState.buttons.map((b, idx) => `
-        <div class="item-row" style="flex-direction: column; align-items: stretch;">
-          <div class="form-row">
-            <input type="text" class="form-control" value="${b.label}" onchange="updateButtonField(${idx}, 'label', this.value)" placeholder="اسم الزر" />
-            <input type="text" class="form-control" value="${b.url}" onchange="updateButtonField(${idx}, 'url', this.value)" placeholder="الرابط (إن وجد)" />
-          </div>
-          <div style="display:flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.78rem; color: var(--text-secondary);">الوظيفة: ${b.action}</span>
-            <button class="btn-danger" onclick="deleteButton(${idx})">حذف الزر</button>
-          </div>
-        </div>
-      `).join('');
-
-      // 3. البنرات
-      const bnList = document.getElementById('admBannersList');
-      bnList.innerHTML = appState.banners.map((b, idx) => `
-        <div class="item-row">
-          <div style="overflow:hidden;">
-            <div style="font-weight:700; font-size:0.9rem;">${b.title || 'بنر بدون عنوان'}</div>
-            <div style="font-size:0.75rem; color:var(--text-secondary);">${b.img}</div>
-          </div>
-          <button class="btn-danger" onclick="deleteBanner(${idx})">حذف</button>
-        </div>
-      `).join('');
-
-      // 4. الأفلام والمجموعات
-      const catSelect = document.getElementById('newMovieCat');
-      catSelect.innerHTML = appState.categories.filter(c => c !== 'الكل').map(c => `<option value="${c}">${c}</option>`).join('');
-
-      const catList = document.getElementById('admCategoriesList');
-      catList.innerHTML = appState.categories.filter(c => c !== 'الكل').map(c => `
-        <div class="item-row" style="padding: 6px 12px;">
-          <span>${c}</span>
-          <button class="btn-danger" style="padding:3px 8px;" onclick="deleteCategory('${c}')">حذف</button>
-        </div>
-      `).join('');
-
-      const mvList = document.getElementById('admMoviesList');
-      mvList.innerHTML = appState.movies.map((m, idx) => `
-        <div class="item-row">
-          <div>
-            <div style="font-weight:700;">${m.title} <span style="font-size:0.75rem; color:var(--accent-primary);">(${m.category})</span></div>
-            <div style="font-size:0.78rem; color:var(--text-secondary);">${m.desc}</div>
-          </div>
-          <button class="btn-danger" onclick="deleteMovie(${idx})">حذف</button>
-        </div>
-      `).join('');
-
-      // 5. الهوية والخطوط
-      document.getElementById('admColorPrimary').value = appState.theme.primary;
-      document.getElementById('admColorBg').value = appState.theme.bg;
-      document.getElementById('admColorCard').value = appState.theme.card;
-      document.getElementById('admColorText').value = appState.theme.text;
-      document.getElementById('admFontFamily').value = appState.theme.fontFamily;
-      document.getElementById('admTitleSize').value = appState.theme.titleSize;
-      document.getElementById('admBodySize').value = appState.theme.bodySize;
-      document.getElementById('admBtnSize').value = appState.theme.btnSize;
-    }
-
-    function saveStreamSettings() {
-      appState.stream.isActive = document.getElementById('admStreamActive').value === 'true';
-      appState.stream.url = document.getElementById('admStreamUrl').value.trim();
-      appState.stream.fallbackType = document.getElementById('admFallbackType').value;
-      appState.stream.fallbackTitle = document.getElementById('admFallbackTitle').value.trim();
-      appState.stream.fallbackSub = document.getElementById('admFallbackSub').value.trim();
-      appState.stream.fallbackMedia = document.getElementById('admFallbackMedia').value.trim();
-      persistState();
-    }
-
-    function updateButtonField(idx, field, val) {
-      appState.buttons[idx][field] = val;
-      persistState();
-    }
-
-    function addNewButton() {
-      const label = document.getElementById('newBtnLabel').value.trim();
-      if (!label) return alert('يرجى إدخال اسم الزر');
-      appState.buttons.push({
-        id: 'btn_' + Date.now(),
-        label,
-        icon: document.getElementById('newBtnIcon').value.trim() || 'link',
-        action: document.getElementById('newBtnAction').value,
-        url: document.getElementById('newBtnUrl').value.trim(),
-        isPrimary: false
-      });
-      document.getElementById('newBtnLabel').value = '';
-      document.getElementById('newBtnUrl').value = '';
-      persistState();
-      populateAdminForms();
-    }
-
-    function deleteButton(idx) {
-      if (!confirm('هل أنت متأكد من حذف هذا الزر؟')) return;
-      appState.buttons.splice(idx, 1);
-      persistState();
-      populateAdminForms();
-    }
-
-    function addNewBanner() {
-      const img = document.getElementById('newBannerImg').value.trim();
-      if (!img) return alert('يرجى إدخال رابط صورة البنر');
-      appState.banners.push({
-        id: 'bn_' + Date.now(),
-        title: document.getElementById('newBannerTitle').value.trim(),
-        img,
-        link: document.getElementById('newBannerLink').value.trim()
-      });
-      document.getElementById('newBannerTitle').value = '';
-      document.getElementById('newBannerImg').value = '';
-      document.getElementById('newBannerLink').value = '';
-      persistState();
-      populateAdminForms();
-    }
-
-    function deleteBanner(idx) {
-      if (!confirm('هل تريد حذف هذا البنر الإعلاني؟')) return;
-      appState.banners.splice(idx, 1);
-      persistState();
-      populateAdminForms();
-    }
-
-    function addMovieCategory() {
-      const name = document.getElementById('newCatName').value.trim();
-      if (!name || appState.categories.includes(name)) return;
-      appState.categories.push(name);
-      document.getElementById('newCatName').value = '';
-      persistState();
-      populateAdminForms();
-    }
-
-    function deleteCategory(catName) {
-      if (!confirm(`سيتم حذف مجموعة "${catName}" وجميع الأفلام المرتبطة بها. هل أنت متأكد؟`)) return;
-      appState.categories = appState.categories.filter(c => c !== catName);
-      appState.movies = appState.movies.filter(m => m.category !== catName);
-      if (selectedCategory === catName) selectedCategory = 'الكل';
-      persistState();
-      populateAdminForms();
-    }
-
-    function addNewMovie() {
-      const title = document.getElementById('newMovieTitle').value.trim();
-      const url = document.getElementById('newMovieUrl').value.trim();
-      if (!title || !url) return alert('يرجى إدخال عنوان الفيلم ورابط التشغيل');
-      appState.movies.push({
-        id: 'mv_' + Date.now(),
-        title,
-        category: document.getElementById('newMovieCat').value || 'مختارات خاصة',
-        desc: document.getElementById('newMovieDesc').value.trim(),
-        poster: document.getElementById('newMoviePoster').value.trim() || 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=600&q=80',
-        url
-      });
-      document.getElementById('newMovieTitle').value = '';
-      document.getElementById('newMovieDesc').value = '';
-      document.getElementById('newMoviePoster').value = '';
-      document.getElementById('newMovieUrl').value = '';
-      persistState();
-      populateAdminForms();
-    }
-
-    function deleteMovie(idx) {
-      if (!confirm('هل أنت متأكد من حذف هذا الفيلم؟')) return;
-      appState.movies.splice(idx, 1);
-      persistState();
-      populateAdminForms();
-    }
-
-    function saveThemeSettings() {
-      appState.theme = {
-        primary: document.getElementById('admColorPrimary').value,
-        bg: document.getElementById('admColorBg').value,
-        card: document.getElementById('admColorCard').value,
-        text: document.getElementById('admColorText').value,
-        fontFamily: document.getElementById('admFontFamily').value,
-        titleSize: document.getElementById('admTitleSize').value,
-        bodySize: document.getElementById('admBodySize').value,
-        btnSize: document.getElementById('admBtnSize').value
-      };
-      persistState();
-    }
-
-    function resetDefaultTheme() {
-      if (!confirm('استعادة الألوان والخطوط الافتراضية؟')) return;
-      appState.theme = { ...defaultData.theme };
-      persistState();
-      populateAdminForms();
-    }
-
-    function renderAll() {
-      applyTheme();
-      renderScreen();
-      renderUserButtons();
-      renderBanners();
-      renderMovies();
-      lucide.createIcons();
-    }
-
-    // التشغيل الأولي عند تحميل الصفحة
-    renderAll();
-  </script>
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-check ml-2"></i> تم الحفظ بنجاح';
+                btn.classList.replace('gold-gradient', 'bg-green-500');
+                btn.classList.replace('text-black', 'text-white');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.replace('bg-green-500', 'gold-gradient');
+                    btn.classList.replace('text-white', 'text-black');
+                    btn.disabled = false;
+                }, 2000);
+            }, 1000);
+        }
+    </script>
 </body>
 </html>
-
