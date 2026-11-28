@@ -1,0 +1,272 @@
+'use strict';
+
+const express = require('express');
+const session = require('express-session');
+const multer = require('multer');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
+const app = express();
+const port = Number(process.env.PORT) || 3000;
+const root = __dirname;
+const publicDir = path.join(root, 'public');
+const dataDir = path.join(root, 'data');
+const uploadDir = path.join(publicDir, 'uploads');
+const stateFile = path.join(dataDir, 'state.json');
+const adminsFile = path.join(dataDir, 'admins.json');
+
+fs.mkdirSync(dataDir, { recursive: true });
+fs.mkdirSync(uploadDir, { recursive: true });
+
+app.disable('x-powered-by');
+app.use(express.json({ limit: '2mb' }));
+
+app.use(session({
+  name: 'almoghani.sid',
+  secret: process.env.SESSION_SECRET || 'غيّر-هذا-السر-إلى-قيمة-عشوائية-طويلة',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 8 * 60 * 60 * 1000
+  }
+}));
+
+const defaults = {
+  settings: {
+    title: 'almoghani',
+    subtitle: 'مساحتك الخاصة للبث والمحتوى',
+    websiteUrl: 'https://example.com',
+    contactUrl: 'https://wa.me/',
+    aiUrl: 'https://example.com',
+    liveUrl: '',
+    liveActive: false,
+    backgroundUrl: '',
+    fallbackType: 'message',
+    fallbackMessage: 'أهلاً بك في almoghani — سيظهر المحتوى هنا قريباً.',
+    fallbackUrl: '',
+    logoUrl: '',
+    logoPosition: 'top-right',
+    primary: '#d71920',
+    secondary: '#a70f18',
+    background: '#080808',
+    surface: '#151515',
+    text: '#f4f1f1',
+    muted: '#aaa3a3',
+    fontFamily: 'Tahoma, Arial, sans-serif',
+    headingSize: 34,
+    bodySize: 16,
+    buttonSize: 15
+  },
+  buttons: [
+    { id: 'website', label: 'رابط موقعي', action: 'website', target: '', enabled: true },
+    { id: 'refresh', label: 'تحديث البث', action: 'refresh', target: '', enabled: true },
+    { id: 'contact', label: 'راسلني', action: 'contact', target: '', enabled: true },
+    { id: 'ai', label: 'شات الذكاء الاصطناعي', action: 'ai', target: '', enabled: true },
+    { id: 'live', label: 'عرض البث المباشر', action: 'live', target: '', enabled: true }
+  ],
+  banners: [],
+  groups: [],
+  movies: []
+};
+
+function readJson(file, fallback) {
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return fallback;
+  }
+}
+
+let state = readJson(stateFile, defaults);
+
+function saveState() {
+  const temporaryFile = `${stateFile}.tmp`;
+  fs.writeFileSync(temporaryFile, JSON.stringify(state, null, 2), 'utf8');
+  fs.renameSync(temporaryFile, stateFile);
+}
+
+if (!fs.existsSync(stateFile)) saveState();
+
+let admins = readJson(adminsFile, null);
+
+if (!admins) {
+  admins = [{
+    id: crypto.randomUUID(),
+    username: process.env.ADMIN_USER || 'admin',
+    passwordHash: bcrypt.hashSync(
+      process.env.ADMIN_PASSWORD || 'ChangeMe_123!',
+      12
+    )
+  }];
+  fs.writeFileSync(adminsFile, JSON.stringify(admins, null, 2), 'utf8');
+  console.log('حساب الإدارة الأولي: admin');
+  console.log('غيّر كلمة المرور الافتراضية قبل نشر الموقع.');
+}
+
+function requireAdmin(req, res, next) {
+  if (!req.session.adminId) {
+    return res.status(401).json({ error: 'سجّل الدخول إلى لوحة التحكم أولاً.' });
+  }
+  next();
+}
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, callback) => callback(null, uploadDir),
+  filename: (_req, file, callback) => {
+    const extension = path.extname(file.originalname).toLowerCase().slice(0, 12);
+    callback(null, `${Date.now()}-${crypto.randomUUID()}${extension}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 },
+  fileFilter: (_req, file, callback) => {
+    if (!file.mimetype.startsWith('image/') &&
+        !file.mimetype.startsWith('video/')) {
+      return callback(new Error('ارفع صورة أو فيديو فقط.'));
+    }
+    callback(null, true);
+  }
+});
+
+// الحالة العامة لا تتضمن معلومات حسابات الإدارة.
+app.get('/api/state', (_req, res) => {
+  res.json(state);
+});
+
+app.post('/api/login', async (req, res) => {
+  const username = String(req.body.username || '');
+  const password = String(req.body.password || '');
+  const admin = admins.find(item => item.username === username);
+
+  if (!admin || !(await bcrypt.compare(password, admin.passwordHash))) {
+    return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة.' });
+  }
+
+  req.session.adminId = admin.id;
+  req.session.username = admin.username;
+  res.json({ ok: true, username: admin.username });
+});
+
+app.post('/api/logout', requireAdmin, (req, res) => {
+  req.session.destroy(() => res.json({ ok: true }));
+});
+
+app.get('/api/me', (req, res) => {
+  res.json(req.session.adminId
+    ? { loggedIn: true, username: req.session.username }
+    : { loggedIn: false });
+});
+
+// تُحفظ الحالة كاملة ثم تقرؤها واجهة المستخدم في التحديث الدوري.
+app.put('/api/state', requireAdmin, (req, res) => {
+  const incoming = req.body;
+
+  if (!incoming || !incoming.settings ||
+      !Array.isArray(incoming.buttons) ||
+      !Array.isArray(incoming.banners) ||
+      !Array.isArray(incoming.groups) ||
+      !Array.isArray(incoming.movies)) {
+    return res.status(400).json({ error: 'بيانات الموقع غير مكتملة.' });
+  }
+
+  state = {
+    settings: { ...defaults.settings, ...incoming.settings },
+    buttons: incoming.buttons.slice(0, 50),
+    banners: incoming.banners.slice(0, 100),
+    groups: incoming.groups.slice(0, 100),
+    movies: incoming.movies.slice(0, 500)
+  };
+
+  saveState();
+  res.json({ ok: true });
+});
+
+app.post('/api/upload', requireAdmin, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'اختر ملفاً للتحميل.' });
+  }
+  res.json({ url: `/uploads/${req.file.filename}` });
+});
+
+// تعرض كلمات المرور المشفرة داخل الخادم فقط ولا ترسلها إلى المتصفح.
+app.get('/api/admins', requireAdmin, (req, res) => {
+  res.json(admins.map(({ id, username }) => ({
+    id,
+    username,
+    current: id === req.session.adminId
+  })));
+});
+
+app.post('/api/admins', requireAdmin, async (req, res) => {
+  const username = String(req.body.username || '').trim();
+  const password = String(req.body.password || '');
+
+  if (!/^[a-zA-Z0-9_.-]{3,32}$/.test(username)) {
+    return res.status(400).json({
+      error: 'اسم المشرف: من 3 إلى 32 حرفاً أو رقماً.'
+    });
+  }
+
+  if (password.length < 10) {
+    return res.status(400).json({
+      error: 'كلمة المرور يجب ألا تقل عن 10 أحرف.'
+    });
+  }
+
+  if (admins.some(item => item.username === username)) {
+    return res.status(409).json({ error: 'اسم المستخدم مسجل مسبقاً.' });
+  }
+
+  admins.push({
+    id: crypto.randomUUID(),
+    username,
+    passwordHash: await bcrypt.hash(password, 12)
+  });
+
+  fs.writeFileSync(adminsFile, JSON.stringify(admins, null, 2), 'utf8');
+  res.json({ ok: true });
+});
+
+app.delete('/api/admins/:id', requireAdmin, (req, res) => {
+  if (req.params.id === req.session.adminId) {
+    return res.status(400).json({ error: 'لا يمكنك حذف حسابك الحالي.' });
+  }
+
+  if (admins.length < 2) {
+    return res.status(400).json({ error: 'يجب إبقاء مشرف واحد على الأقل.' });
+  }
+
+  const updated = admins.filter(item => item.id !== req.params.id);
+
+  if (updated.length === admins.length) {
+    return res.status(404).json({ error: 'حساب المشرف غير موجود.' });
+  }
+
+  admins = updated;
+  fs.writeFileSync(adminsFile, JSON.stringify(admins, null, 2), 'utf8');
+  res.json({ ok: true });
+});
+
+app.get(['/admin', '/admin/'], (_req, res) => {
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+app.use('/uploads', express.static(uploadDir));
+app.use(express.static(publicDir));
+
+app.use((error, _req, res, _next) => {
+  console.error(error.message);
+  res.status(400).json({ error: error.message || 'حدث خطأ في الطلب.' });
+});
+
+app.listen(port, () => {
+  console.log(`almoghani: http://localhost:${port}`);
+  console.log(`لوحة الإدارة: http://localhost:${port}/admin`);
+});
